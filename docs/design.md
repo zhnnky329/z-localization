@@ -303,7 +303,7 @@ UWB 因子约束天线的位置。我们计算 UWB 测量时刻的天线位置�
 
 ### 3.2 状态机设计
 
-[![后端定位状态转移图](../src/backend/docs/assets/state-transitions.svg)](../src/backend/docs/assets/state-transitions.svg)
+[![后端定位状态转移图](../src/z_loc/docs/assets/state-transitions.svg)](../src/z_loc/docs/assets/state-transitions.svg)
 
 除了等待初始化的 `INITIALIZING` 和正常定位的 `NORMAL`，我们认为匹配质量差主要有两种情况。
 一种是点云本身质量差，提供的观测较弱；另一种是位姿估计不准。后者又可以分成前端逐渐漂移和已经发散，

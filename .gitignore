@@ -67,9 +67,9 @@ htmlcov/
 !/.env.example
 !/.env.sample
 /CMakeUserPresets.json
-/config/*.local.yaml
-/config/*.local.yml
-/config/*.local.json
+/src/*/config/*.local.yaml
+/src/*/config/*.local.yml
+/src/*/config/*.local.json
 
 # 编辑器配置、临时文件与系统元数据。
 .vscode/

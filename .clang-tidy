@@ -12,6 +12,6 @@ Checks: >-
 # 将选定检查发现的问题作为质量检查错误。
 WarningsAsErrors: '*'
 # 检查工程维护的公共与私有头文件。
-HeaderFilterRegex: '.*[/\\]src[/\\](frontend|backend|localization_interfaces)[/\\].*'
+HeaderFilterRegex: '.*[/\\]src[/\\](frontend|backend|z_lio)[/\\].*'
 # 沿用仓库内的代码格式。
 FormatStyle: file
