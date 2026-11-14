@@ -2,6 +2,7 @@
  * @file initialization.cpp
  * @brief 管理启动窗口收集、粗配准、重去畸变、优化接受及状态地图交接。
  */
+#include "eigen_geometry.hpp"
 #include "zlio/initialization.hpp"
 
 #include <Eigen/Eigenvalues>

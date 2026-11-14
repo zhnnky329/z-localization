@@ -82,6 +82,52 @@ TEST(InputQueue, CapacityFailureDoesNotSilentlyDropAcceptedEvent) {
     queue.finish();
 }
 
+TEST(InputQueue, PreservesMixedEventPayloadsAndReleasesPointCapacity) {
+    InputQueue queue(4, 2);
+    {
+        InputQueue::Admission admission(queue);
+        ASSERT_TRUE(admission);
+        Imu imu;
+        imu.time = 123;
+        imu.angular_velocity = Vec3(.1, .2, .3);
+        imu.acceleration = Vec3(1., 2., 9.81);
+        imu.source_begin = 100;
+        imu.source_end = 200;
+        queue.push(imu);
+        const Scan points{{Vec3(1., 2., 3.), 124, 7}, {Vec3(4., 5., 6.), 125, 8}};
+        queue.push(points);
+
+        const auto first = queue.take();
+        ASSERT_TRUE(first);
+        ASSERT_TRUE(std::holds_alternative<Imu>(*first));
+        const auto& measurement = std::get<Imu>(*first);
+        EXPECT_EQ(measurement.time, imu.time);
+        EXPECT_EQ(measurement.angular_velocity, imu.angular_velocity);
+        EXPECT_EQ(measurement.acceleration, imu.acceleration);
+        EXPECT_EQ(measurement.source_begin, imu.source_begin);
+        EXPECT_EQ(measurement.source_end, imu.source_end);
+
+        const auto second = queue.take();
+        ASSERT_TRUE(second);
+        ASSERT_TRUE(std::holds_alternative<Scan>(*second));
+        const auto& scan = std::get<Scan>(*second);
+        ASSERT_EQ(scan.size(), points.size());
+        for (std::size_t i = 0; i < scan.size(); ++i) {
+            EXPECT_EQ(scan[i].position, points[i].position);
+            EXPECT_EQ(scan[i].time, points[i].time);
+            EXPECT_EQ(scan[i].id, points[i].id);
+        }
+        // 已取出的点云不再占用容量，下一帧仍可完整入队。
+        EXPECT_NO_THROW(queue.push(points));
+    }
+    queue.close();
+    const auto last = queue.take();
+    ASSERT_TRUE(last);
+    EXPECT_EQ(std::get<Scan>(*last).size(), 2U);
+    EXPECT_FALSE(queue.take());
+    queue.finish();
+}
+
 TEST(BatchExecutor, JoinsAllPartitionsAndCanBeReusedAfterException) {
     BatchExecutor executor(4);
     std::array<int, 4> visits{};

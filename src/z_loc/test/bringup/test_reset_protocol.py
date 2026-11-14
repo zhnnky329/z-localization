@@ -36,7 +36,7 @@ atexit.register(_resources.close)
 def generate_test_description(scenario):
     """为停车、实际运动、运行恢复和启动中断分别启动独立的前后端进程。"""
     os.environ['ROS_DOMAIN_ID'] = str(_resources.enter_context(domain_id()))
-    os.environ['ROS_LOCALHOST_ONLY'] = '1'
+    os.environ['ROS_AUTOMATIC_DISCOVERY_RANGE'] = 'LOCALHOST'
     root = Path(_resources.enter_context(tempfile.TemporaryDirectory(prefix='bringup-protocol-')))
     os.environ['ROS_LOG_DIR'] = str(root / 'logs')
     configuration = root / 'backend.yaml'

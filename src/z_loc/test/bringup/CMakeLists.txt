@@ -7,7 +7,7 @@ set_tests_properties(bringup_composition_test PROPERTIES LABELS "integration")
 get_filename_component(z_lio_share "${z_lio_DIR}/.." ABSOLUTE)
 add_launch_test(test_reset_protocol.py TARGET bringup_reset_protocol_test TIMEOUT 240
     ARGS "config:=${z_lio_share}/config/lio.yaml" LABELS "ros;integration")
-set_tests_properties(bringup_reset_protocol_test PROPERTIES
+set_tests_properties(bringup_reset_protocol_test bringup_composition_test PROPERTIES
     ENVIRONMENT "ROS_LOG_DIR=${CMAKE_CURRENT_BINARY_DIR}/ros_logs")
 
 # pytest 和动态导入的 launch 文件不在源码树生成字节码。

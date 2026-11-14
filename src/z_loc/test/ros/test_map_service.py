@@ -33,7 +33,7 @@ atexit.register(_resources.close)
 def generate_test_description():
     """在独立 ROS 域中通过生产 launch 启动被测节点。"""
     os.environ['ROS_DOMAIN_ID'] = str(_resources.enter_context(domain_id()))
-    os.environ['ROS_LOCALHOST_ONLY'] = '1'
+    os.environ['ROS_AUTOMATIC_DISCOVERY_RANGE'] = 'LOCALHOST'
     root = Path(_resources.enter_context(tempfile.TemporaryDirectory(prefix='backend-ros-')))
     (root / 'logs').mkdir()
     os.environ['ROS_LOG_DIR'] = str(root / 'logs')

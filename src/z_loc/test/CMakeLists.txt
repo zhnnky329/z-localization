@@ -71,7 +71,8 @@ endif()
 
 localization_enable_warnings()
 
-set_tests_properties(backend_map_service_test backend_calibration_launch_test PROPERTIES
+set_tests_properties(backend_map_service_test backend_calibration_launch_test
+    backend_launch_config_test PROPERTIES
     ENVIRONMENT "ROS_LOG_DIR=${CMAKE_CURRENT_BINARY_DIR}/ros_logs")
 
 # pytest 和动态导入的 launch 文件不在源码树生成字节码。

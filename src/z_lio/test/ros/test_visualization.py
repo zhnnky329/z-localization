@@ -29,7 +29,7 @@ atexit.register(_resources.close)
 
 def generate_test_description():
     os.environ['ROS_DOMAIN_ID'] = str(_resources.enter_context(domain_id()))
-    os.environ['ROS_LOCALHOST_ONLY'] = '1'
+    os.environ['ROS_AUTOMATIC_DISCOVERY_RANGE'] = 'LOCALHOST'
     os.environ['ROS_LOG_DIR'] = _resources.enter_context(tempfile.TemporaryDirectory())
     process = ExecuteProcess(cmd=[
         LaunchConfiguration('node'), '--ros-args', '-p', 'path_max_poses:=2',

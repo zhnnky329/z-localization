@@ -67,10 +67,15 @@ std::optional<InputQueue::Event> InputQueue::take() {
     });
     if (state_ == State::Failed || events_.empty())
         return std::nullopt;
-    Event event = std::move(events_.front());
-    events_.pop_front();
-    if (const auto* scan = std::get_if<Scan>(&event))
+    // 显式构造当前分支，避免 GCC 13 对 variant 移动的未初始化误报。
+    std::optional<Event> event;
+    if (auto* scan = std::get_if<Scan>(&events_.front())) {
         queued_points_ -= scan->size();
+        event.emplace(std::in_place_type<Scan>, std::move(*scan));
+    } else {
+        event.emplace(std::in_place_type<Imu>, std::get<Imu>(events_.front()));
+    }
+    events_.pop_front();
     return event;
 }
 

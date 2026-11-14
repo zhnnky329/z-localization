@@ -9,22 +9,26 @@ Z-LOC 是 Z-Localization 的定位后端，最初用于东北大学 T-DT 实验�
 
 ## 编译
 
-原项目的实机环境是 Ubuntu 22.04、ROS 2 Humble。需要 C++17、GTSAM **4.2.x**、Eigen、PCL、
-nanoflann 1.4.x、oneTBB 和 OpenMP。4.3 及以上版本的 GTSAM 会在配置阶段被拒绝。
-后端沿用 nanoflann 1.4.x 的查询 API；本次编译使用 [1.4.3](https://github.com/jlblancoc/nanoflann/tree/v1.4.3)，
-不要直接用改过 API 的 1.5.x 替代。
-Ubuntu 24.04 / Jazzy 的验证情况见仓库根目录说明。
+当前目标环境是 **Ubuntu 24.04 / ROS 2 Jazzy**。需要 C++17、GTSAM **4.2.x**、Eigen、PCL、
+nanoflann **≥ 1.5**、oneTBB 和 OpenMP。后端已使用 nanoflann 1.5 的查询 API，1.4.x 不再支持。
+4.3 及以上版本的 GTSAM 仍会在配置阶段被拒绝。
+
+Ubuntu 24.04 软件源提供 `libgtsam-dev` 4.2.0 和 `libnanoflann-dev` 1.5.4，可通过 rosdep 安装。
+原项目在 Humble 下的实机记录保留，Jazzy 的验证情况见仓库根目录说明。
 
 这个包依赖 `z_lio` 提供的消息和服务类型。将两个包放进同一个工作区的 `src/` 后，在工作区根目录执行：
 
 ```bash
-source /opt/ros/humble/setup.bash
-rosdep install --from-paths src --ignore-src --rosdistro humble -r -y
-colcon build --packages-up-to z_loc --cmake-args -DCMAKE_BUILD_TYPE=Release
-source install/setup.bash
+source /opt/ros/jazzy/setup.bash
+rosdep update --rosdistro jazzy
+rosdep install --from-paths src --ignore-src --rosdistro jazzy -r -y
+colcon --log-base log-jazzy build --build-base build-jazzy --install-base install-jazzy \
+  --packages-up-to z_loc --cmake-args -DCMAKE_BUILD_TYPE=Release
+source install-jazzy/setup.bash
 ```
 
-Jazzy 环境将 `humble` 换成 `jazzy`。如果 GTSAM 或 nanoflann 装在自定义位置，可通过
+从 Humble 迁移时，在干净终端只加载 Jazzy，并使用新的构建、安装目录。不要复用 Humble 的编译产物。
+如果 GTSAM 或 nanoflann 装在自定义位置，可通过
 `-DGTSAM_DIR=/path/to/lib/cmake/GTSAM` 和 `-DNANOFLANN_INCLUDE_DIR=/path/to/include` 指定。
 
 ## 先跑起来
@@ -133,8 +137,8 @@ ros2 launch z_loc z_loc.launch.py \
 - `test/bringup/`：联合启动参数与真实前后端重置测试。
 
 ```bash
-colcon test --packages-select z_loc
-colcon test-result --verbose
+colcon --log-base log-jazzy test --build-base build-jazzy --install-base install-jazzy --packages-select z_loc
+colcon test-result --test-result-base build-jazzy --verbose
 ```
 
 带标签数据集的清理验收仍通过 `LOCALIZATION_TEST_DATA_DIR` 显式启用。

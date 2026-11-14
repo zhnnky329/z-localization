@@ -9,32 +9,39 @@ Z-LIO 是 Z-Localization 的激光惯性里程计前端，最初用于东北大�
 
 ## 编译
 
-原项目的实机环境是 Ubuntu 22.04、ROS 2 Humble。Ubuntu 24.04 / Jazzy 的验证情况见仓库根目录说明。
-需要 C++17、Eigen ≥ 3.3、yaml-cpp、nanoflann、OpenMP，以及 ROS 2 的开发和测试依赖。
+当前目标环境是 **Ubuntu 24.04 / ROS 2 Jazzy**，使用 GCC 13 和 Python 3.12。
+原项目在 Humble 下的实机记录保留，Jazzy 的构建和测试情况见仓库根目录说明。
+需要 C++17、Eigen ≥ 3.3、yaml-cpp、nanoflann ≥ 1.5、OpenMP，以及 ROS 2 的开发和测试依赖。
 
 把这个目录放进工作区的 `src/`，在工作区根目录执行：
 
 ```bash
-source /opt/ros/humble/setup.bash
-rosdep install --from-paths src --ignore-src --rosdistro humble -r -y
-colcon build --packages-select z_lio --cmake-args -DCMAKE_BUILD_TYPE=Release
-source install/setup.bash
+source /opt/ros/jazzy/setup.bash
+rosdep update --rosdistro jazzy
+rosdep install --from-paths src --ignore-src --rosdistro jazzy -r -y
+colcon --log-base log-jazzy build --build-base build-jazzy --install-base install-jazzy \
+  --packages-select z_lio --cmake-args -DCMAKE_BUILD_TYPE=Release
+source install-jazzy/setup.bash
 ```
 
-Jazzy 环境将上面的 `humble` 换成 `jazzy`。包内自带配置、消息定义和 CMake 辅助文件，可以单独放进其他工作区。
+从 Humble 迁移时，在干净终端只加载 Jazzy，并使用新的构建、安装目录。不要复用 Humble 的编译产物。
+包内自带配置、消息定义和 CMake 辅助文件，可以单独放进其他 Jazzy 工作区。
 
 仓库不再附带 Livox 驱动。默认可直接编译 PointCloud2 输入；如果编译时能找到外部安装的
 `livox_ros_driver2`，会一并启用 CustomMsg 适配。也可以显式选择：
 
 ```bash
 # 先安装并 source 外部驱动的工作区，再启用 CustomMsg
-colcon build --packages-select z_lio --cmake-args -DZ_LIO_WITH_LIVOX=ON
+colcon --log-base log-jazzy build --build-base build-jazzy --install-base install-jazzy \
+  --packages-select z_lio --cmake-args -DZ_LIO_WITH_LIVOX=ON
 
 # 只使用 PointCloud2，不需要安装驱动
-colcon build --packages-select z_lio --cmake-args -DZ_LIO_WITH_LIVOX=OFF
+colcon --log-base log-jazzy build --build-base build-jazzy --install-base install-jazzy \
+  --packages-select z_lio --cmake-args -DZ_LIO_WITH_LIVOX=OFF
 ```
 
-`ON` 时必须能找到驱动的消息包。LiDAR 的网络配置和驱动进程由外部驱动负责。
+`ON` 时必须能找到驱动的消息包。外部驱动也要在 Jazzy 环境中编译，不能加载 Humble 的驱动二进制。
+LiDAR 的网络配置和驱动进程由外部驱动负责。
 
 ## 运行
 
@@ -111,8 +118,8 @@ PointCloud2 必须包含 `x/y/z` 和逐点时间。节点默认读取纳秒相�
 - `test/`：状态数学、输入、初始化、估计、地图、协议序列化和 ROS 链路测试。
 
 ```bash
-colcon test --packages-select z_lio
-colcon test-result --verbose
+colcon --log-base log-jazzy test --build-base build-jazzy --install-base install-jazzy --packages-select z_lio
+colcon test-result --test-result-base build-jazzy --verbose
 ```
 
 启用 Livox 适配时，传感器链路测试还会覆盖 CustomMsg 输入。前后端联合重置测试放在 Z-LOC 中。

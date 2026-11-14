@@ -2,6 +2,8 @@
  * @file uncertainty.cpp
  * @brief 在固定规范下传播启动加权估计器的不确定度，并转换各帧导航误差边缘。
  */
+#include "eigen_geometry.hpp"
+
 #include <Eigen/Cholesky>
 #include <Eigen/Eigenvalues>
 #include <algorithm>
