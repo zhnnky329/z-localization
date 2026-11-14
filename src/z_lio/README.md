@@ -1,47 +1,23 @@
 # Z-LIO
 
-Z-LIO 是 Z-Localization 的激光惯性里程计前端，最初用于东北大学 T-DT 实验室 2026 年 RoboMaster 哨兵。
-输入是带逐点时间的 LiDAR 点云和 IMU，输出是局部里程计、去畸变点云，以及随 IMU 更新的高频预测。
-它可以单独运行，也可以和 Z-LOC 一起使用。
+Z-LIO 是 Z-Localization 的前端激光惯性里程计，输入带逐点时间的 LiDAR 点云和 IMU，输出局部里程计、去畸变点云，以及随 IMU 更新的高频预测。
 
-前端维护自己的局部平面地图，不加载先验地图。启动时用多帧点云和 IMU 联合估计初始状态，不要求机器人一直静止。
-正常运行后，通过迭代误差状态滤波更新位姿、速度和 IMU 零偏；观测间隔与点云采样分辨率会随运动和场景调整。
+前端维护自己的局部平面地图，不加载先验地图。启动时用多帧点云和 IMU 联合估计初始状态，可以在非静止情况下初始化；正常运行后，通过迭代误差状态滤波更新位姿、速度和 IMU 零偏；观测间隔与点云采样分辨率会随运动和场景调整。
 
 ## 编译
 
-当前目标环境是 **Ubuntu 24.04 / ROS 2 Jazzy**，使用 GCC 13 和 Python 3.12。
-原项目在 Humble 下的实机记录保留，Jazzy 的构建和测试情况见仓库根目录说明。
-需要 C++17、Eigen ≥ 3.3、yaml-cpp、nanoflann ≥ 1.5、OpenMP，以及 ROS 2 的开发和测试依赖。
+当前目标环境是 **Ubuntu 24.04 / ROS 2 Jazzy**
+ C++17、Eigen ≥ 3.3、yaml-cpp、nanoflann ≥ 1.5、OpenMP，以及 ROS 2 的开发和测试依赖
 
-把这个目录放进工作区的 `src/`，在工作区根目录执行：
+在工作区根目录执行：
 
 ```bash
 source /opt/ros/jazzy/setup.bash
 rosdep update --rosdistro jazzy
 rosdep install --from-paths src --ignore-src --rosdistro jazzy -r -y
-colcon --log-base log-jazzy build --build-base build-jazzy --install-base install-jazzy \
-  --packages-select z_lio --cmake-args -DCMAKE_BUILD_TYPE=Release
+colcon --packages-select z_lio --cmake-args -DCMAKE_BUILD_TYPE=Release
 source install-jazzy/setup.bash
 ```
-
-从 Humble 迁移时，在干净终端只加载 Jazzy，并使用新的构建、安装目录。不要复用 Humble 的编译产物。
-包内自带配置、消息定义和 CMake 辅助文件，可以单独放进其他 Jazzy 工作区。
-
-仓库不再附带 Livox 驱动。默认可直接编译 PointCloud2 输入；如果编译时能找到外部安装的
-`livox_ros_driver2`，会一并启用 CustomMsg 适配。也可以显式选择：
-
-```bash
-# 先安装并 source 外部驱动的工作区，再启用 CustomMsg
-colcon --log-base log-jazzy build --build-base build-jazzy --install-base install-jazzy \
-  --packages-select z_lio --cmake-args -DZ_LIO_WITH_LIVOX=ON
-
-# 只使用 PointCloud2，不需要安装驱动
-colcon --log-base log-jazzy build --build-base build-jazzy --install-base install-jazzy \
-  --packages-select z_lio --cmake-args -DZ_LIO_WITH_LIVOX=OFF
-```
-
-`ON` 时必须能找到驱动的消息包。外部驱动也要在 Jazzy 环境中编译，不能加载 Humble 的驱动二进制。
-LiDAR 的网络配置和驱动进程由外部驱动负责。
 
 ## 运行
 
@@ -146,7 +122,7 @@ colcon test-result --test-result-base build-jazzy --verbose
 同时感谢 [Livox ROS Driver 2](https://github.com/Livox-SDK/livox_ros_driver2) 提供驱动与消息接口，
 以及 ROS 2、Eigen、yaml-cpp、nanoflann 和 OpenMP 生态的维护者。
 
-## 作者与许可
+## 原作者与许可
 
 mozihe · [zhujunheng2005@gmail.com](mailto:zhujunheng2005@gmail.com) · QQ：820288431
 

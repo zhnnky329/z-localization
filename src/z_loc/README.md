@@ -1,37 +1,24 @@
 # Z-LOC
 
-Z-LOC 是 Z-Localization 的定位后端，最初用于东北大学 T-DT 实验室 2026 年 RoboMaster 哨兵。
-它接收前端里程计和去畸变点云，结合先验地图、回环与 UWB 观测，输出全局位姿、速度、协方差和定位状态。
-地图制作、动态残影清理和车体外参标定工具也在这个包里。
+Z-LOC 是 Z-Localization 的定位后端
+它接收前端里程计和去畸变点云，结合先验地图、回环与 UWB 观测，输出全局位姿、速度、协方差和定位状态，同时也包含地图制作、动态残影清理和车体外参标定工具。
 
-前端负责短时间的连续运动估计，后端负责 `map → odom`。先验地图匹配和 UWB 作为观测加入 GTSAM 因子图，
-通过一致性检验后才用于校正。定位不可信时会冻结已有可信位姿，再尝试重定位或协调重置前端。
+前端负责短时间的连续运动估计，后端负责 `map → odom`。先验地图匹配和 UWB 作为观测加入 GTSAM 因子图，通过一致性检验后才用于校正。定位不可信时会冻结已有可信位姿，再尝试重定位或协调重置前端。
 
 ## 编译
 
-当前目标环境是 **Ubuntu 24.04 / ROS 2 Jazzy**。需要 C++17、GTSAM **4.2.x**、Eigen、PCL、
+当前目标环境是 **Ubuntu 24.04 / ROS 2 Jazzy**。 C++17、GTSAM **4.2.x**、Eigen、PCL、
 nanoflann **≥ 1.5**、oneTBB 和 OpenMP。后端已使用 nanoflann 1.5 的查询 API，1.4.x 不再支持。
-4.3 及以上版本的 GTSAM 仍会在配置阶段被拒绝。
-
-Ubuntu 24.04 软件源提供 `libgtsam-dev` 4.2.0 和 `libnanoflann-dev` 1.5.4，可通过 rosdep 安装。
-原项目在 Humble 下的实机记录保留，Jazzy 的验证情况见仓库根目录说明。
 
 这个包依赖 `z_lio` 提供的消息和服务类型。将两个包放进同一个工作区的 `src/` 后，在工作区根目录执行：
 
 ```bash
 source /opt/ros/jazzy/setup.bash
-rosdep update --rosdistro jazzy
-rosdep install --from-paths src --ignore-src --rosdistro jazzy -r -y
-colcon --log-base log-jazzy build --build-base build-jazzy --install-base install-jazzy \
-  --packages-up-to z_loc --cmake-args -DCMAKE_BUILD_TYPE=Release
+colcon --packages-up-to z_loc --cmake-args -DCMAKE_BUILD_TYPE=Release
 source install-jazzy/setup.bash
 ```
 
-从 Humble 迁移时，在干净终端只加载 Jazzy，并使用新的构建、安装目录。不要复用 Humble 的编译产物。
-如果 GTSAM 或 nanoflann 装在自定义位置，可通过
-`-DGTSAM_DIR=/path/to/lib/cmake/GTSAM` 和 `-DNANOFLANN_INCLUDE_DIR=/path/to/include` 指定。
-
-## 先跑起来
+## 验证
 
 没有先验地图、暂时也不用 UWB 时，可以先验证完整链路。
 新建一个场地配置，例如工作区下的 `pcd/site.yaml`：
@@ -158,7 +145,7 @@ Scan Context 适用于默认 Mid-360 场景；有限视场的 G-PROBE 实现也�
 
 同时感谢 ROS 2、PCL、Eigen、nanoflann、oneTBB 和 OpenMP 生态的维护者。
 
-## 作者与许可
+## 原作者与许可
 
 mozihe · [zhujunheng2005@gmail.com](mailto:zhujunheng2005@gmail.com) · QQ：820288431
 
