@@ -7,16 +7,27 @@ Z-LOC 是 Z-Localization 的定位后端
 
 ## 编译
 
-当前目标环境是 **Ubuntu 24.04 / ROS 2 Jazzy**。 C++17、GTSAM **4.2.x**、Eigen、PCL、
+当前目标环境是 **Ubuntu 24.04 / ROS 2 Jazzy**。 C++17、GTSAM **4.3a1**、Eigen、PCL、
 nanoflann **≥ 1.5**、oneTBB 和 OpenMP。后端已使用 nanoflann 1.5 的查询 API，1.4.x 不再支持。
+
+GTSAM 固定使用与 IRobot-SentryNav27 的 Small GLIM 相同的 PPA 构建：包版本 `4.3.0`、
+库标识 `4.3a1`，配套 gtsam_points `1.2.2`。默认共享前缀为 `$HOME/.local/opt/small-glim-deps/usr/local`，
+`GTSAM_DIR` 指向其 `lib/cmake/GTSAM`，不自动查找其他前缀。
 
 这个包依赖 `z_lio` 提供的消息和服务类型。将两个包放进同一个工作区的 `src/` 后，在工作区根目录执行：
 
 ```bash
 source /opt/ros/jazzy/setup.bash
-colcon --packages-up-to z_loc --cmake-args -DCMAKE_BUILD_TYPE=Release
-source install-jazzy/setup.bash
+export GTSAM_DIR="$HOME/.local/opt/small-glim-deps/usr/local/lib/cmake/GTSAM"
+colcon --log-base log-gtsam43 build --build-base build-gtsam43 --install-base install-gtsam43 \
+  --packages-up-to z_loc --cmake-args -DCMAKE_BUILD_TYPE=Release -DGTSAM_DIR="$GTSAM_DIR"
+source install-gtsam43/setup.bash
 ```
+
+本次迁移已通过 Release / `-Werror` 构建，六项重点回归共 68 个用例通过；节点与
+gtsam_points 实际加载同一份 `libgtsam.so.4.3a1`。全部 19 个测试目标中 15 个通过，
+3 个 ROS 启动目标受沙箱端口权限限制，另 1 个启动参数测试未同步现有 `point_time_*` 改动。
+尚未完成 ROS 通信、bag 和实车回归。
 
 ## 验证
 
@@ -40,6 +51,7 @@ trajectory:
 ros2 launch z_loc bringup.launch.py \
   backend_config:="$PWD/pcd/site.yaml" mode:=mapping \
   input_type:=pointcloud2 lidar_topic:=/points imu_topic:=/imu \
+  point_time_field:=offset_time point_time_absolute:=false \
   imu_acceleration_scale:=1.0 rviz:=true
 ```
 
@@ -50,10 +62,13 @@ ros2 launch z_loc bringup.launch.py \
   backend_config:="$PWD/pcd/site.yaml" \
   mode:=localization prior_map:="$PWD/pcd/site_prior" \
   input_type:=pointcloud2 lidar_topic:=/points imu_topic:=/imu \
+  point_time_field:=offset_time point_time_absolute:=false \
   imu_acceleration_scale:=1.0 rviz:=true
 ```
 
-Mid-360 CustomMsg 输入改为 `input_type:=livox`，并填写实际话题与加速度倍率；
+本仓库 MID360 驱动默认使用 `/livox/lidar/pointcloud` 的 PointCloud2，
+逐点时间为绝对纳秒字段 `timestamp`，无需填写上面的输入覆盖参数。
+Mid-360 CustomMsg 输入改为 `input_type:=livox lidar_topic:=/livox/lidar`，并填写实际加速度倍率；
 需要先在编译 Z-LIO 时启用外部驱动消息适配。这里不会启动或配置雷达驱动。
 回放 bag 时添加 `use_sim_time:=true`，另一个终端执行 `ros2 bag play /path/to/bag --clock`。
 

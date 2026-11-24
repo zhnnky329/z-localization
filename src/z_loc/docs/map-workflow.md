@@ -38,7 +38,7 @@ trajectory:
 ros2 launch z_loc bringup.launch.py \
   frontend_config:="$PWD/src/z_lio/config/lio.yaml" \
   backend_config:="$PWD/pcd/site.yaml" \
-  mode:=mapping input_type:=livox use_sim_time:=true rviz:=true
+  mode:=mapping input_type:=livox lidar_topic:=/livox/lidar use_sim_time:=true rviz:=true
 ```
 
 另一个终端播放 bag：
@@ -108,7 +108,7 @@ ros2 run z_loc build_pcd_map_bundle \
 ros2 launch z_loc bringup.launch.py \
   frontend_config:="$PWD/src/z_lio/config/lio.yaml" \
   backend_config:="$PWD/pcd/site.yaml" \
-  mode:=localization input_type:=livox prior_map:="$PWD/pcd/site_prior" \
+  mode:=localization input_type:=livox lidar_topic:=/livox/lidar prior_map:="$PWD/pcd/site_prior" \
   use_sim_time:=true rviz:=true
 ```
 

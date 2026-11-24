@@ -37,11 +37,11 @@ public:
           sqrt_information_(sqrt_information) {}
 
     /// 计算测量残差，并在请求时写出各状态的解析 Jacobian。
-    gtsam::Vector evaluateError(const gtsam::Pose3& pose, boost::optional<gtsam::Matrix&> jacobian =
-                                                              boost::none) const override {
+    gtsam::Vector evaluateError(const gtsam::Pose3& pose,
+                                gtsam::OptionalMatrixType jacobian) const override {
         if (jacobian) {
             gtsam::Matrix66 H_local;
-            const gtsam::Vector6 local = measurement_.localCoordinates(pose, boost::none, H_local);
+            const gtsam::Vector6 local = measurement_.localCoordinates(pose, nullptr, H_local);
             *jacobian = sqrt_information_ * H_local;
             return sqrt_information_ * local;
         }
@@ -69,13 +69,13 @@ public:
     /// 计算测量残差，并在请求时写出各状态的解析 Jacobian。
     gtsam::Vector evaluateError(
         const gtsam::Pose3& from, const gtsam::Pose3& to,
-        boost::optional<gtsam::Matrix&> from_jacobian = boost::none,
-        boost::optional<gtsam::Matrix&> to_jacobian = boost::none) const override {
+        gtsam::OptionalMatrixType from_jacobian,
+        gtsam::OptionalMatrixType to_jacobian) const override {
         gtsam::Matrix66 H_from;
         gtsam::Matrix66 H_to;
         const gtsam::Pose3 predicted = from.between(to, H_from, H_to);
         gtsam::Matrix66 H_local;
-        const gtsam::Vector6 local = measurement_.localCoordinates(predicted, boost::none, H_local);
+        const gtsam::Vector6 local = measurement_.localCoordinates(predicted, nullptr, H_local);
         if (from_jacobian) {
             *from_jacobian = sqrt_information_ * H_local * H_from;
         }
@@ -161,7 +161,7 @@ void PoseGraph::addGravityAlignment(const int index, const Eigen::Matrix4d& T_od
         std::abs(rotation.determinant() - 1.0) > 1.0e-5) {
         throw std::invalid_argument("gravity alignment odometry rotation is not in SO(3)");
     }
-    pending_graph_.add(gtsam::make_shared<GravityAlignmentFactor>(
+    pending_graph_.add(std::make_shared<GravityAlignmentFactor>(
         index, gtsam::Rot3(rotation),
         gtsam::noiseModel::Isotropic::Sigma(3, standard_deviation_rad)));
 }
@@ -220,7 +220,7 @@ void PoseGraph::addAbsolutePoseInformation(const int index, const Eigen::Matrix4
                                         ? "absolute pose information measurement is non-finite"
                                         : invalid_reason);
     }
-    pending_graph_.add(gtsam::make_shared<ProjectedPosePriorFactor>(
+    pending_graph_.add(std::make_shared<ProjectedPosePriorFactor>(
         index, toGtsam(measured_pose), backendToGtsamPoseSqrtInformation(sqrt_information)));
 }
 
@@ -276,7 +276,7 @@ void PoseGraph::addLoopInformation(const int from_index, const int to_index,
     const Eigen::MatrixXd L = backendToGtsamPoseSqrtInformation(sqrt_information);
     const auto noise =
         robustNoise(gtsam::noiseModel::Unit::Create(static_cast<std::size_t>(L.rows())), config_);
-    pending_graph_.add(gtsam::make_shared<ProjectedPoseBetweenFactor>(
+    pending_graph_.add(std::make_shared<ProjectedPoseBetweenFactor>(
         from_index, to_index, toGtsam(measured_between), L, noise));
 }
 

@@ -4,7 +4,6 @@
  */
 #pragma once
 
-#include <gtsam/base/make_shared.h>
 #include <gtsam/geometry/Pose2.h>
 #include <gtsam/geometry/Pose3.h>
 #include <gtsam/linear/NoiseModel.h>
@@ -149,9 +148,9 @@ private:
     /// 检查位置、连杆臂及共享时空状态，返回不可用原因。
     std::string uwbInputError(const UwbMeasurement& measurement, bool use_z) const;
     /// 按高度、空间对齐和时间支撑组合构造对应的 UWB 因子。
-    gtsam::NoiseModelFactor::shared_ptr makeUwbFactor(int index, const UwbMeasurement& measurement,
-                                                      bool use_z,
-                                                      const gtsam::SharedNoiseModel& noise) const;
+    std::shared_ptr<gtsam::NoiseModelFactor> makeUwbFactor(
+        int index, const UwbMeasurement& measurement, bool use_z,
+        const gtsam::SharedNoiseModel& noise) const;
     /// 将后端齐次位姿转换为 GTSAM Pose3。
     static gtsam::Pose3 toGtsam(const Eigen::Matrix4d& pose);
     /// 将 GTSAM Pose3 转换为后端齐次位姿。

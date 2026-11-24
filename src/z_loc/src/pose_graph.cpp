@@ -101,9 +101,7 @@ void PoseGraph::recordNewState(const int index, const Eigen::Matrix4d& pose,
     }
 }
 
-/// GTSAM 4.2 的 smoother 存在同团 frontal 重消元漏标缺陷，见上游 borglab/gtsam issue #1638。
-/// 共享标定量参与时可触发该缺陷，使树仍引用已删除状态；上游 PR #1890 修复此问题，4.3a1 已包含修复。
-/// 为兼容系统 4.2，此处直接控制 iSAM2：仅轨迹位姿过期，共享标定量常驻，并检测团内顺序冲突及子团依赖。
+/// 固定窗口只移除过期轨迹位姿，共享标定量常驻，并检测团内顺序冲突及子团依赖。
 /// 必要时重新消元相关团及其子树，将过期位姿排到叶端后再边缘化，保留存活变量的联合信息。
 void PoseGraph::updateWindow() {
     gtsam::KeyList expired;
@@ -155,7 +153,10 @@ void PoseGraph::updateWindow() {
         affected.insert(affected.end(), frontals.begin(), frontals.end());
         cliques.insert(cliques.end(), clique->children.begin(), clique->children.end());
     }
-    isam_->update(pending_graph_, pending_values_, {}, groups, boost::none, affected);
+    gtsam::ISAM2UpdateParams update_params;
+    update_params.constrainedKeys = groups;
+    update_params.extraReelimKeys = affected;
+    isam_->update(pending_graph_, pending_values_, update_params);
     isam_->marginalizeLeaves(expired);
     pose_timestamps_.erase(pose_timestamps_.begin(), pose_timestamps_.begin() + expired.size());
 }

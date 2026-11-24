@@ -32,11 +32,11 @@ public:
     /// 计算测量残差，并在请求时写出各状态的解析 Jacobian。
     gtsam::Vector evaluateError(
         const gtsam::Pose2& planar, const double& z,
-        boost::optional<gtsam::Matrix&> planar_jacobian = boost::none,
-        boost::optional<gtsam::Matrix&> z_jacobian = boost::none) const override {
+        gtsam::OptionalMatrixType planar_jacobian,
+        gtsam::OptionalMatrixType z_jacobian) const override {
         gtsam::Matrix33 H_local;
         const gtsam::Vector3 planar_error =
-            planar_measurement_.localCoordinates(planar, boost::none, H_local);
+            planar_measurement_.localCoordinates(planar, nullptr, H_local);
         if (planar_jacobian) {
             planar_jacobian->setZero(4, 3);
             planar_jacobian->topRows<3>() = H_local;
@@ -72,7 +72,7 @@ void PoseGraph::addUwbAlignmentPrior(const Eigen::Matrix4d& T_map_uwb,
         "UWB alignment prior");
     if (use_z) {
         const gtsam::Key z_key = uwbAlignmentZKey();
-        pending_graph_.add(gtsam::make_shared<UwbAlignmentPriorFactor>(planar_key, z_key, planar,
+        pending_graph_.add(std::make_shared<UwbAlignmentPriorFactor>(planar_key, z_key, planar,
                                                                        T_map_uwb(2, 3), noise));
         pending_values_.insert(z_key, T_map_uwb(2, 3));
     } else {

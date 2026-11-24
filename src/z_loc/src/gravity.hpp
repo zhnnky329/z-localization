@@ -20,7 +20,7 @@ public:
     /// 计算测量残差，并在请求时写出各状态的解析 Jacobian。
     gtsam::Vector evaluateError(
         const gtsam::Pose3& T_map_sensor,
-        boost::optional<gtsam::Matrix&> jacobian = boost::none) const override {
+        gtsam::OptionalMatrixType jacobian) const override {
         gtsam::Matrix33 H_rotation;
         const gtsam::Vector3 gravity_sensor =
             T_map_sensor.rotation().unrotate(gtsam::Vector3::UnitZ(), H_rotation);

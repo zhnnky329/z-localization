@@ -33,9 +33,11 @@ find_path(NANOFLANN_INCLUDE_DIR nanoflann.hpp REQUIRED)
 find_package(Threads REQUIRED)
 find_package(TBB REQUIRED COMPONENTS tbb)
 find_package(OpenMP REQUIRED COMPONENTS CXX)
-find_package(GTSAM 4.2 CONFIG REQUIRED)
-if(GTSAM_VERSION VERSION_GREATER_EQUAL 4.3)
-    message(FATAL_ERROR "backend targets GTSAM 4.2.x; select its GTSAM_DIR")
+set(GTSAM_DIR "$ENV{HOME}/.local/opt/small-glim-deps/usr/local/lib/cmake/GTSAM"
+    CACHE PATH "Shared GTSAM 4.3a1 installation used by Small GLIM/gtsam_points")
+find_package(GTSAM 4.3 CONFIG REQUIRED PATHS "${GTSAM_DIR}" NO_DEFAULT_PATH)
+if(NOT GTSAM_VERSION_STRING STREQUAL "4.3a1")
+    message(FATAL_ERROR "z_loc requires GTSAM 4.3a1 from the shared GTSAM_DIR used by Small GLIM/gtsam_points")
 endif()
 
 # 核心库不依赖 ROS，节点和工具按各自接口链接。
@@ -136,7 +138,8 @@ ament_target_dependencies(backend_node ${BACKEND_ROS_DEPS})
 target_link_libraries(backend_node backend_core z_lio::z_lio__rosidl_typesupport_cpp)
 set_target_properties(backend_node PROPERTIES
     BUILD_RPATH "$<TARGET_FILE_DIR:gtsam>"
-    INSTALL_RPATH "$<TARGET_FILE_DIR:gtsam>")
+    INSTALL_RPATH "$<TARGET_FILE_DIR:gtsam>"
+    INSTALL_RPATH_USE_LINK_PATH TRUE)
 # 地图与标定工具保留稳定的命令名称。
 add_library(backend_tool_bundle STATIC tools/bundle.cpp)
 target_include_directories(backend_tool_bundle PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/tools)
@@ -162,6 +165,9 @@ list(APPEND BACKEND_TOOLS clean_map_bundle)
 foreach(tool IN LISTS BACKEND_TOOLS)
     target_include_directories(${tool} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src ${CMAKE_CURRENT_SOURCE_DIR})
     target_link_libraries(${tool} backend_core)
+    set_target_properties(${tool} PROPERTIES
+        INSTALL_RPATH "$<TARGET_FILE_DIR:gtsam>"
+        INSTALL_RPATH_USE_LINK_PATH TRUE)
 endforeach()
 ament_target_dependencies(body_calibration_node rclcpp geometry_msgs nav_msgs tf2 tf2_ros tf2_eigen)
 install(TARGETS backend_node ${BACKEND_TOOLS}

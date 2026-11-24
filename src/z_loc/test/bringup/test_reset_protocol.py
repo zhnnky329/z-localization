@@ -57,6 +57,7 @@ def generate_test_description(scenario):
         'wait_for_start': 'true' if scenario == 'cold' else 'false',
         'reset_mode': 'cold' if scenario == 'cold' else 'warm',
         'lidar_topic': '/test/lidar', 'imu_topic': '/test/imu',
+        'point_time_field': 'offset_time', 'point_time_absolute': 'false',
         'imu_acceleration_scale': '1.0',
     }.items())
     return launch.LaunchDescription([system, launch_testing.actions.ReadyToTest()]), {'root': root}

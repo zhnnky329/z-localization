@@ -24,8 +24,8 @@ public:
           lever_arm_(lever_arm) {}
 
     /// 计算测量残差，并在请求时写出各状态的解析 Jacobian。
-    gtsam::Vector evaluateError(const gtsam::Pose3& pose, boost::optional<gtsam::Matrix&> jacobian =
-                                                              boost::none) const override {
+    gtsam::Vector evaluateError(const gtsam::Pose3& pose,
+                                gtsam::OptionalMatrixType jacobian) const override {
         gtsam::Matrix36 H;
         const gtsam::Point3 predicted = pose.transformFrom(lever_arm_, H);
         if (jacobian) {
@@ -52,8 +52,8 @@ public:
           lever_arm_(lever_arm) {}
 
     /// 计算测量残差，并在请求时写出各状态的解析 Jacobian。
-    gtsam::Vector evaluateError(const gtsam::Pose3& pose, boost::optional<gtsam::Matrix&> jacobian =
-                                                              boost::none) const override {
+    gtsam::Vector evaluateError(const gtsam::Pose3& pose,
+                                gtsam::OptionalMatrixType jacobian) const override {
         gtsam::Matrix36 H;
         const gtsam::Point3 predicted = pose.transformFrom(lever_arm_, H);
         if (jacobian) {
@@ -119,8 +119,8 @@ public:
     /// 计算测量残差，并在请求时写出各状态的解析 Jacobian。
     gtsam::Vector evaluateError(
         const gtsam::Pose3& pose, const gtsam::Pose2& T_map_uwb_planar,
-        boost::optional<gtsam::Matrix&> pose_jacobian = boost::none,
-        boost::optional<gtsam::Matrix&> alignment_jacobian = boost::none) const override {
+        gtsam::OptionalMatrixType pose_jacobian,
+        gtsam::OptionalMatrixType alignment_jacobian) const override {
         const AlignedUwbPrediction prediction =
             predictAlignedUwb(pose, T_map_uwb_planar, /*z_map_uwb=*/0.0,
                               Eigen::Vector3d(lever_arm_.x(), lever_arm_.y(), lever_arm_.z()));
@@ -157,9 +157,9 @@ public:
     /// 计算测量残差，并在请求时写出各状态的解析 Jacobian。
     gtsam::Vector evaluateError(
         const gtsam::Pose3& pose, const gtsam::Pose2& T_map_uwb_planar, const double& z_map_uwb,
-        boost::optional<gtsam::Matrix&> pose_jacobian = boost::none,
-        boost::optional<gtsam::Matrix&> alignment_jacobian = boost::none,
-        boost::optional<gtsam::Matrix&> z_jacobian = boost::none) const override {
+        gtsam::OptionalMatrixType pose_jacobian,
+        gtsam::OptionalMatrixType alignment_jacobian,
+        gtsam::OptionalMatrixType z_jacobian) const override {
         const AlignedUwbPrediction prediction =
             predictAlignedUwb(pose, T_map_uwb_planar, z_map_uwb,
                               Eigen::Vector3d(lever_arm_.x(), lever_arm_.y(), lever_arm_.z()));
@@ -196,8 +196,8 @@ public:
     /// 计算测量残差，并在请求时写出各状态的解析 Jacobian。
     gtsam::Vector evaluateError(
         const gtsam::Pose3& pose, const double& time_offset_seconds,
-        boost::optional<gtsam::Matrix&> pose_jacobian = boost::none,
-        boost::optional<gtsam::Matrix&> time_jacobian = boost::none) const override {
+        gtsam::OptionalMatrixType pose_jacobian,
+        gtsam::OptionalMatrixType time_jacobian) const override {
         Eigen::Vector3d antenna_in_keyframe;
         Eigen::Vector3d velocity_in_keyframe;
         if (!support_.evaluate(time_offset_seconds, &antenna_in_keyframe, &velocity_in_keyframe)) {
@@ -257,9 +257,9 @@ public:
     gtsam::Vector evaluateError(
         const gtsam::Pose3& pose, const gtsam::Pose2& T_map_uwb_planar,
         const double& time_offset_seconds,
-        boost::optional<gtsam::Matrix&> pose_jacobian = boost::none,
-        boost::optional<gtsam::Matrix&> alignment_jacobian = boost::none,
-        boost::optional<gtsam::Matrix&> time_jacobian = boost::none) const override {
+        gtsam::OptionalMatrixType pose_jacobian,
+        gtsam::OptionalMatrixType alignment_jacobian,
+        gtsam::OptionalMatrixType time_jacobian) const override {
         Eigen::Vector3d antenna_in_keyframe;
         Eigen::Vector3d velocity_in_keyframe;
         if (!support_.evaluate(time_offset_seconds, &antenna_in_keyframe, &velocity_in_keyframe)) {
@@ -307,10 +307,10 @@ public:
     gtsam::Vector evaluateError(
         const gtsam::Pose3& pose, const gtsam::Pose2& T_map_uwb_planar, const double& z_map_uwb,
         const double& time_offset_seconds,
-        boost::optional<gtsam::Matrix&> pose_jacobian = boost::none,
-        boost::optional<gtsam::Matrix&> alignment_jacobian = boost::none,
-        boost::optional<gtsam::Matrix&> z_jacobian = boost::none,
-        boost::optional<gtsam::Matrix&> time_jacobian = boost::none) const override {
+        gtsam::OptionalMatrixType pose_jacobian,
+        gtsam::OptionalMatrixType alignment_jacobian,
+        gtsam::OptionalMatrixType z_jacobian,
+        gtsam::OptionalMatrixType time_jacobian) const override {
         Eigen::Vector3d antenna_in_keyframe;
         Eigen::Vector3d velocity_in_keyframe;
         if (!support_.evaluate(time_offset_seconds, &antenna_in_keyframe, &velocity_in_keyframe)) {
@@ -365,31 +365,31 @@ std::string PoseGraph::uwbInputError(const UwbMeasurement& measurement, bool use
 }
 
 /// 按高度、空间对齐和时间支撑组合构造对应的 UWB 因子。
-gtsam::NoiseModelFactor::shared_ptr PoseGraph::makeUwbFactor(
+std::shared_ptr<gtsam::NoiseModelFactor> PoseGraph::makeUwbFactor(
     int index, const UwbMeasurement& m, bool use_z, const gtsam::SharedNoiseModel& noise) const {
     using namespace detail;
     if (m.time_support) {
         if (!m.with_alignment)
-            return gtsam::make_shared<TimedUwbPositionFactor>(index, uwbTimeOffsetKey(), m.position,
+            return std::make_shared<TimedUwbPositionFactor>(index, uwbTimeOffsetKey(), m.position,
                                                               *m.time_support, use_z, noise);
         if (use_z)
-            return gtsam::make_shared<TimedUwbPositionWithAlignmentFactor>(
+            return std::make_shared<TimedUwbPositionWithAlignmentFactor>(
                 index, uwbAlignmentKey(), uwbAlignmentZKey(), uwbTimeOffsetKey(), m.position,
                 *m.time_support, noise);
-        return gtsam::make_shared<TimedUwbPositionXYWithAlignmentFactor>(
+        return std::make_shared<TimedUwbPositionXYWithAlignmentFactor>(
             index, uwbAlignmentKey(), uwbTimeOffsetKey(), m.position, *m.time_support, noise);
     }
     const gtsam::Point3 lever = m.antenna_in_keyframe;
     if (m.with_alignment) {
         if (use_z)
-            return gtsam::make_shared<UwbPositionWithAlignmentFactor>(
+            return std::make_shared<UwbPositionWithAlignmentFactor>(
                 index, uwbAlignmentKey(), uwbAlignmentZKey(), m.position, lever, noise);
-        return gtsam::make_shared<UwbPositionXYWithAlignmentFactor>(
+        return std::make_shared<UwbPositionXYWithAlignmentFactor>(
             index, uwbAlignmentKey(), m.position.head<2>(), lever, noise);
     }
     if (use_z)
-        return gtsam::make_shared<PositionWithLeverArmFactor>(index, m.position, lever, noise);
-    return gtsam::make_shared<PositionXYWithLeverArmFactor>(index, m.position.head<2>(), lever,
+        return std::make_shared<PositionWithLeverArmFactor>(index, m.position, lever, noise);
+    return std::make_shared<PositionXYWithLeverArmFactor>(index, m.position.head<2>(), lever,
                                                             noise);
 }
 
@@ -428,7 +428,7 @@ InnovationTerm PoseGraph::linearizeUwbPosition(int index, const UwbMeasurement& 
     const auto factor =
         makeUwbFactor(index, measurement, use_z, gtsam::noiseModel::Unit::Create(use_z ? 3 : 2));
     std::vector<gtsam::Matrix> jacobians(factor->keys().size());
-    const auto residual = factor->unwhitenedError(values, jacobians);
+    const auto residual = factor->unwhitenedError(values, &jacobians);
     return detail::makeWhitenedInnovationTerm(
         std::vector<gtsam::Key>(factor->keys().begin(), factor->keys().end()), residual, jacobians,
         measurementCovariance(measurement, use_z), "UWB");
